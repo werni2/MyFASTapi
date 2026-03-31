@@ -53,14 +53,13 @@
                     <input id="username-input" type="text" placeholder="">
                 </label>
 
-                <button onclick="client.joinSession(
-                                    config.utilsBaseUrl, 
-                                    document.getElementById('session-id-input').value, 
-                                    document.getElementById('username-input').value
-                                )
-                ">
+                <button onclick="client.joinSession(config.utilsBaseUrl, 'session-id-input', 'username-input', 'lat2', 'lng2', 'speed')">
                     Session beitreten
                 </button>
+
+                <div class="value-box">Breitengrad: <span id="lat2"></span></div>
+                <div class="value-box">Längengrad: <span id="lng2"></span></div>
+                <div class="value-box">Speed: <span id="speed"></span></div>
 
                 <div id="timing-session"></div>
 

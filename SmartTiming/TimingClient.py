@@ -4,11 +4,12 @@ import numpy as np
 
 class TimingClient(ABC):
 
-    def __init__(self):
-        self._latitude = None
-        self._longitude = None
-        self._timestamp = None
-        self._speed = None
+    def __init__(self, client_id: str):
+        self._latitude = 0.0
+        self._longitude = 0.0
+        self._timestamp = 0.0
+        self._speed = 0.0
+        self._client_id =client_id
         self_kalman = KalmanFilter(dim_x=4, dim_z=2)
 
         # State: [x, y, vx, vy]
@@ -19,12 +20,16 @@ class TimingClient(ABC):
         self._timestamp = update_data.timestamp
         self._speed = 0.0
 
-        self.kalman.predict()
-        self.kalman.update(np.array([update_data.coords.latitude, update_data.coords.longitude]))
+        #self.kalman.predict()
+        #self.kalman.update(np.array([update_data.coords.latitude, update_data.coords.longitude]))
 
         # filtered state
-        self._latitude = self.kalman.x[0]
-        self._longitude = self.kalman.x[1]
+        self._latitude = update_data.coords.latitude
+        self._longitude = update_data.coords.longitude
+
+    @property
+    def client_id(self):
+        return self._client_id
 
     @property
     def latitude(self):

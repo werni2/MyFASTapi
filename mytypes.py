@@ -51,7 +51,8 @@ class UpdateClientRequest(BaseModel):
 
 
 # Result-Modell für den gefilterten Update eines Clients
-class UpdateClientResultModel(BaseModel):
+class TimingClientStateModel(BaseModel):
+    client_id: Optional[str] = None
     latitude: float
     longitude: float
     speed: float

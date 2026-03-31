@@ -84,7 +84,7 @@ async def list_session_ids(store = Depends(get_session_store)):
 # Client tritt einer Session bei
 # ---------------------------------------------------------
 @router.post("/timing_sessions/{session_id}/clients")
-async def post_timing_clients(
+async def join_timing_session(
     session_id: str,
     body: JoinSessionRequest,
     store = Depends(get_session_store)
@@ -127,7 +127,7 @@ async def post_timing_clients(
 # ---------------------------------------------------------
 # Liste aller Clients einer Session abrufen
 # ---------------------------------------------------------
-@router.get("/timing_sessions/{session_id}/clients")
+@router.get("/timing_sessions/{session_id}/clients", response_model=List[TimingClientStateModel])
 async def get_timing_clients(
     session_id: str,
     store = Depends(get_session_store)
@@ -137,9 +137,14 @@ async def get_timing_clients(
         session = await store.get(session_id)
 
         # Clients abrufen
-        clients = await session.get_clients()
+        clients = await session.get_all_clients()
 
-        return {"session_id": session_id, "clients": clients}
+        return [TimingClientStateModel(
+            client_id=c.client_id,
+            latitude=c.latitude,
+            longitude=c.longitude,
+            speed=c.speed
+        ) for c in clients]
 
     except Exception as ex:
         return JSONResponse(
@@ -150,7 +155,7 @@ async def get_timing_clients(
 # ---------------------------------------------------------
 # Client updaten
 # ---------------------------------------------------------
-@router.patch("/timing_sessions/{session_id}/client/{client_id}", response_model=UpdateClientResultModel)
+@router.patch("/timing_sessions/{session_id}/client/{client_id}", response_model=TimingClientStateModel)
 async def update_timing_clients(
     session_id: str,
     client_id: str,
@@ -168,7 +173,12 @@ async def update_timing_clients(
         client.update(update_data)
 
         # Gibt das aktualisierte Client-Modell zurück
-        return UpdateClientResultModel(latitude=client.latitude, longitude=client.longitude, speed=client.speed)
+        return TimingClientStateModel(
+            client_id=client.client_id,
+            latitude=client.latitude,
+            longitude=client.longitude,
+            speed=client.speed
+        )
 
     except Exception as ex:
         return JSONResponse(

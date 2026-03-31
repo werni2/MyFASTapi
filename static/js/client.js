@@ -1,7 +1,13 @@
 class Client {
+    
     constructor() {
         this.watchId = null;
         this.counter = 0;
+        this.sessionElm = null;
+        this.clientElm = null;
+        this.longitudeElm = null;
+        this.latitudeElm = null;
+        this.speedElm = null;
     }
 
     async GetGPSPosition() {
@@ -57,21 +63,32 @@ class Client {
         }
     }
 
-    async joinSession(baseURL, session_id, client_id) {
-        const response = await fetch(`${baseURL}/timing_sessions/${session_id}/clients`, {
+    async joinSession(baseURL, session_id, client_id, longitude_id, latitude_id, speed_id) {
+
+        this.sessionElm = document.getElementById(session_id); 
+        this.clientElm = document.getElementById(client_id);
+        this.longitudeElm = document.getElementById(longitude_id);
+        this.latitudeElm = document.getElementById(latitude_id);
+        this.speedElm = document.getElementById(speed_id);
+
+        if (!this.sessionElm || !this.clientElm ||!this.longitudeElm || !this.latitudeElm || !this.speedElm) {
+            throw new Error("Ein oder mehrere HTML-Elemente konnten nicht gefunden werden.");
+        }
+
+        const response = await fetch(`${baseURL}/timing_sessions/${this.sessionElm.value}/clients`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ client_name: client_id })
+            body: JSON.stringify({ client_name: this.clientElm.value })
         });
         
         if (!response.ok) {
             throw new Error("Fehler beim Beitreten der Session.");
         }
 
-        this.startUpdateTimer(baseURL, session_id, client_id);
+        this.startUpdateTimer(baseURL);
     }
 
-    startUpdateTimer(baseURL, session_id, client_id) {
+    startUpdateTimer(baseURL) {
         // Falls schon ein Timer läuft → stoppen
         if (this.updateInterval) {
             clearInterval(this.updateInterval);
@@ -80,7 +97,8 @@ class Client {
         this.updateInterval = setInterval(() => {
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
-                    this.sendUpdate(baseURL, session_id, client_id, pos);
+                    console.log("send update with position:", pos);
+                    this.sendUpdate(baseURL, pos);
                 },
                 (err) => {
                     console.error("Geolocation-Fehler:", err);
@@ -94,7 +112,7 @@ class Client {
         }, 2000);
     }
 
-    async sendUpdate(baseURL, session_id, client_id, position) {
+    async sendUpdate(baseURL, position) {
         try {
             const body = {
                 coords: {
@@ -110,7 +128,7 @@ class Client {
             };
 
             const response = await fetch(
-                `${baseURL}/timing_sessions/${session_id}/clients/${client_id}`,
+                `${baseURL}/timing_sessions/${this.sessionElm.value}/client/${this.clientElm.value}`,
                 {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },
@@ -123,14 +141,21 @@ class Client {
                 return null;
             }
 
-            // 🔥 Hier kommt dein UpdateClientResultModel an
+            // TimingClientStateModel
             const result = await response.json();
 
             console.log("Server-Result:", result);
 
-            // Beispiel-Auswertung:
-            console.log("Neue Position:", result.latitude, result.longitude);
-            console.log("Geschwindigkeit:", result.speed);
+            // Aktualisiere die UI mit den neuen Werten
+            if (this.longitudeElm) {
+                this.longitudeElm.textContent = result.longitude;
+            }
+            if (this.latitudeElm) {
+                this.latitudeElm.textContent = result.latitude;
+            }
+            if (this.speedElm) {
+                this.speedElm.textContent = result.speed;
+            }
 
             return result;
 

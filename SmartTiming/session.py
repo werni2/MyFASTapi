@@ -12,10 +12,14 @@ class Session(ABC):
         async with self.__lock:
             if client_id in self.__clients:
                 raise ValueError("Client existiert bereits")
-            self.__clients[client_id] = TimingClient()
+            self.__clients[client_id] = TimingClient(client_id=client_id)
 
     async def get_client(self, client_id: str) -> TimingClient:
         async with self.__lock:
             if client_id not in self.__clients: 
                 raise ValueError("Client existiert nicht")
             return self.__clients[client_id]
+        
+    async def get_all_clients(self) -> list:
+        async with self.__lock:
+            return list(self.__clients.values())
