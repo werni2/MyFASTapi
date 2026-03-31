@@ -24,6 +24,7 @@ class SessionStore(ABC):
 
 
 class InMemorySessionStore(SessionStore):
+    
     def __init__(self):
         self._data = {}
         self._lock = asyncio.Lock()

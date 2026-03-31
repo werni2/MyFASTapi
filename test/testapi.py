@@ -21,14 +21,3 @@ def norm(vec: VectorModel):
     v = np.array(vec.vector, dtype=float)
     return {"magnitude": float(np.linalg.norm(v))}
 
-@router.post("/CriticalPower", response_model=CriticalPowerResultModel) 
-def CriticalPower(data: PointsModel): 
-
-    # get data & invert x
-    x = np.array([1.0/p.x for p in data.points]) 
-    y = np.array([p.y for p in data.points]) 
-
-    # linear regression
-    W, CP = np.polyfit(x, y, 1)
-    
-    return CriticalPowerResultModel(CP=CP, W=W)

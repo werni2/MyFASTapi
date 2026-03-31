@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="de">
+    <head>
+        <meta charset="UTF-8">
+        <title>{{ title }}</title>
+
+        <link rel="stylesheet" href="/static/css/style.css">
+
+    </head>
+
+    <body>
+        <div class="container">
+
+            <div class="card">
+                <h2>GPS‑Koordinaten</h2>
+
+                <button onclick="client.StartAutoUpdate('lat','lng','error','cnt')">
+                    Auto‑Update starten
+                </button>
+
+                <button onclick="client.StopAutoUpdate()">
+                    Auto‑Update stoppen
+                </button>
+
+                <div class="value-box">Breitengrad: <span id="lat"></span></div>
+                <div class="value-box">Längengrad: <span id="lng"></span></div>
+                <div class="value-box">Counter: <span id="cnt"></span></div>
+
+                <p id="error"></p>
+
+                <div id="gps-coords"></div>
+
+            </div>
+
+            <div class="card">
+                <h2>Join Timing Session</h2>
+
+                <style>
+                    label {
+                        display: block;
+                        text-align: left;
+                        margin-bottom: 10px;
+                    }
+                </style>
+
+                <label>
+                    Session ID:
+                    <input id="session-id-input" type="text" placeholder="">
+                </label>
+
+                <label>
+                    Benutzername:
+                    <input id="username-input" type="text" placeholder="">
+                </label>
+
+                <button onclick="client.joinSession(
+                                    config.utilsBaseUrl, 
+                                    document.getElementById('session-id-input').value, 
+                                    document.getElementById('username-input').value
+                                )
+                ">
+                    Session beitreten
+                </button>
+
+                <div id="timing-session"></div>
+
+            </div>
+        </div>
+
+        <script src="/static/js/client.js"></script>
+        <script>
+            // Settings vom Backend
+            const config = {
+                utilsBaseUrl: "{{ utils_base_url }}"
+            };
+            console.log("Settings geladen:", config);
+        </script>
+    </body>
+</html>

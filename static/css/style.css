@@ -1,0 +1,82 @@
+body {
+    font-family: system-ui, -apple-system, Roboto, sans-serif;
+    background: #0f0f0f;          /* sehr dunkler Hintergrund */
+    margin: 0;
+    padding: 40px;
+    display: flex;
+    justify-content: center;
+    color: #e5e5e5;               /* Standard-Textfarbe */
+}
+
+.card {
+    background: #1a1a1a;          /* dunkle Card */
+    padding: 30px 40px;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    border: 1px solid #2a2a2a;    /* dezente Umrandung */
+}
+
+h2 {
+    margin-top: 0;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+button {
+    background: #2563eb;          /* Blau bleibt – wirkt gut im Dark Mode */
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    margin: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: background 0.2s;
+}
+
+button:hover {
+    background: #1e4fcf;
+}
+
+.value-box {
+    background: #1f2937;          /* dunkles Grau */
+    padding: 10px;
+    border-radius: 8px;
+    margin: 10px 0;
+    font-size: 17px;
+    color: #93c5fd;               /* helles Blau für Werte */
+    font-weight: 500;
+    border: 1px solid #374151;    /* dezente Umrandung */
+}
+
+.card {
+    margin-bottom: 16px; /* oder was du brauchst */
+}
+
+#timing-session {
+    margin-top: 16px;
+}
+
+#gps-coords {
+    margin-top: 16px;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.card label {
+    display: flex;
+    flex-direction: column;
+    font-weight: 600;
+}
+
+.card input {
+    padding: 6px;
+}
+
