@@ -8,6 +8,8 @@ class Client {
         this.longitudeElm = null;
         this.latitudeElm = null;
         this.speedElm = null;
+        this.map = null;  
+        this.marker = null;   
     }
 
     async GetGPSPosition() {
@@ -63,7 +65,7 @@ class Client {
         }
     }
 
-    async joinSession(baseURL, session_id, client_id, longitude_id, latitude_id, speed_id) {
+    async joinSession(baseURL, session_id, client_id, latitude_id, longitude_id, speed_id) {
 
         this.sessionElm = document.getElementById(session_id); 
         this.clientElm = document.getElementById(client_id);
@@ -157,11 +159,55 @@ class Client {
                 this.speedElm.textContent = result.speed;
             }
 
+            await this.updateMap("map2");
+
             return result;
 
         } catch (err) {
             console.error("Netzwerkfehler beim Update:", err);
             return null;
+        }
+    }
+
+    async updateMap(map_id) {
+
+        if (!this.longitudeElm || !this.latitudeElm) {
+            throw new Error("Ein oder mehrere HTML-Elemente konnten nicht gefunden werden.");
+        }
+
+        // Werte aus den DOM-Elementen holen
+        const latText = this.latitudeElm.textContent;
+        const lngText = this.longitudeElm.textContent;
+
+        if (!latText || !lngText) {
+            console.warn("updateMap: Keine Koordinaten vorhanden");
+            return;
+        }
+
+        const lat = parseFloat(latText);
+        const lng = parseFloat(lngText);
+
+        if (isNaN(lat) || isNaN(lng)) {
+            console.warn("updateMap: Ungültige Koordinaten");
+            return;
+        }
+
+        // Map-Objekt global speichern, damit es nicht neu erzeugt wird
+        if (!this.map) {
+            this.map = L.map(map_id).setView([lat, lng], 15);
+
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                maxZoom: 19
+            }).addTo(this.map);
+
+            this.marker = L.marker([lat, lng]).addTo(this.map);
+
+        } else {
+            // Marker aktualisieren
+            this.marker.setLatLng([lat, lng]);
+
+            // Karte auf neue Position zentrieren
+            this.map.setView([lat, lng]);
         }
     }
 }
