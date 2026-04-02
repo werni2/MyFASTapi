@@ -63,6 +63,41 @@ async def create_timing_session(
         content={"session_name": session_name}
     )
 
+# ---------------------------------------------------------
+# Session löschen
+# ---------------------------------------------------------
+@router.delete("/timing_sessions/{session_name}")
+async def delete_timing_session(
+    session_name: str,
+    store = Depends(get_session_store)
+):
+    """
+    Löscht eine bestehende Timing-Session.
+    - session_name: Name der Session
+    - store: InMemorySessionStore (via Dependency Injection)
+    """
+
+    # Validierung
+    if not session_name.strip():
+        return JSONResponse(
+            status_code=400,
+            content={"error": "session_name darf nicht leer sein"}
+        )
+
+    try:
+
+        await store.delete(session_name)
+
+        return JSONResponse(
+            status_code=200,
+            content={"deleted": session_name}
+        )
+
+    except Exception as ex:
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(ex)}
+        )
 
 # ---------------------------------------------------------
 # Liste aller Session-IDs abrufen
@@ -78,7 +113,6 @@ async def list_session_ids(store = Depends(get_session_store)):
         status_code=200,
         content=session_ids
     )
-
 
 # ---------------------------------------------------------
 # Client tritt einer Session bei
@@ -125,6 +159,46 @@ async def join_timing_session(
     )
 
 # ---------------------------------------------------------
+# Client wird gelöscht
+# ---------------------------------------------------------
+@router.delete("/timing_sessions/{session_id}/clients/{client_id}")
+async def remove_client_from_session(
+    session_id: str,
+    client_id: str,
+    store = Depends(get_session_store)
+):
+    # Validierung
+    if not session_id.strip():
+        return JSONResponse(
+            status_code=400,
+            content={"error": "session_id darf nicht leer sein"}
+        )
+
+    if not client_id.strip():
+        return JSONResponse(
+            status_code=400,
+            content={"error": "client_id darf nicht leer sein"}
+        )
+
+    try:
+        # Session abrufen
+        session = await store.get(session_id)
+
+        # Client entfernen
+        await session.remove_client(client_id)
+
+        return JSONResponse(
+            status_code=200,
+            content=f"Client {client_id} aus Session {session_id} entfernt"
+        )
+
+    except Exception as ex:
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(ex)}
+        )
+
+# ---------------------------------------------------------
 # Liste aller Clients einer Session abrufen
 # ---------------------------------------------------------
 @router.get("/timing_sessions/{session_id}/clients", response_model=List[TimingClientStateModel])
@@ -155,7 +229,7 @@ async def get_timing_clients(
 # ---------------------------------------------------------
 # Client updaten
 # ---------------------------------------------------------
-@router.patch("/timing_sessions/{session_id}/client/{client_id}", response_model=TimingClientStateModel)
+@router.patch("/timing_sessions/{session_id}/clients/{client_id}", response_model=TimingClientStateModel)
 async def update_timing_clients(
     session_id: str,
     client_id: str,

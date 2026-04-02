@@ -41,6 +41,8 @@ class InMemorySessionStore(SessionStore):
 
     async def delete(self, session_id: str) -> None:
         async with self._lock:
+            if session_id not in self._data:
+                raise ValueError("Session existiert nicht")
             self._data.pop(session_id, None)
 
     async def session_ids(self) -> list[str]:

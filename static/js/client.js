@@ -130,7 +130,7 @@ class Client {
             };
 
             const response = await fetch(
-                `${baseURL}/timing_sessions/${this.sessionElm.value}/client/${this.clientElm.value}`,
+                `${baseURL}/timing_sessions/${this.sessionElm.value}/clients/${this.clientElm.value}`,
                 {
                     method: "PATCH",
                     headers: { "Content-Type": "application/json" },

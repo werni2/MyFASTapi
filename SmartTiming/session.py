@@ -14,6 +14,12 @@ class Session(ABC):
                 raise ValueError("Client existiert bereits")
             self.__clients[client_id] = TimingClient(client_id=client_id)
 
+    async def remove_client(self, client_id: str) -> None:
+        async with self.__lock:
+            if client_id not in self.__clients:
+                raise ValueError("Client existiert nicht")
+            del self.__clients[client_id]
+
     async def get_client(self, client_id: str) -> TimingClient:
         async with self.__lock:
             if client_id not in self.__clients: 

@@ -9,6 +9,9 @@ from test.testapi import router as testapi_router
 from settings import settings
 import os
 
+os.environ["ENVIRONMENT"] = "development"
+
+print("Utils Base URL:", settings.utils_base_url)
 
 app = FastAPI()
 templates = Jinja2Templates(directory="templates")
@@ -33,6 +36,5 @@ def CriticalPower(
 
 
 if __name__ == "__main__":
-    os.environ["ENVIRONMENT"] = "development"
     uvicorn.run(app, host="0.0.0.0", port=8002)
     

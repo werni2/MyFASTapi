@@ -6,7 +6,7 @@ def get_env_files():
 
     files = [".env"]  # Basis immer laden
 
-    ENV = os.getenv("ENV", "development")
+    ENV = os.getenv("ENVIRONMENT", "development")
     if ENV == "production":
         files.append(".env.production")
     elif ENV == "development":
