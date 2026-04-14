@@ -5,92 +5,99 @@ import numpy as np
 
 class TimingClient(ABC):
 
-    def __init__(self, client_id: str):
-        self._latitude = 0.0
-        self._longitude = 0.0
-        self._timestamp = 0.0
-        self._speed = 0.0
-        self._client_id =client_id
-        self.kalman = KalmanFilter(dim_x=4, dim_z=2)
+    def __init__(self, sigma_m: float, q: float, client_id: str, update_data = None):
 
-        # State: [lat, long, dlat, dlong]
-        self.kalman.x = np.array([0., 0., 0., 0.])
+        self.__sigma_m      = sigma_m
+        self.__q            = q
+        self.__client_id    = client_id
+        self.__kf           = KalmanFilter(dim_x=6, dim_z=2)
+        self.__origin       = update_data.coords if update_data is not None else None
+        self.__t            = update_data.timestamp / 1000.0 if update_data is not None else None 
+        self.__dt           = 0.0  
+        self.__speed        = 0.0  
 
-        # Messmatrix: wir messen nur Position
-        self.kalman.H = np.array([
-            [1, 0, 0, 0],
-            [0, 1, 0, 0]
+        # State: px, vx, ax, py, vy, ay
+        self.__kf.x         = np.zeros(6)
+
+        # Measurement: px, py
+        self.__kf.H         = np.array([
+            [1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 0, 0]
         ])
 
-        # Start-Kovarianz
-        self.kalman.P = np.eye(4, dtype=float) * 1e-3
+        # Measurement noise
+        self.__kf.R         = np.eye(2) * (self.__sigma_m**2)
 
-        # Messrauschen R
-        self._m_per_deg_lat = 40000000.0 / 360.0
-        self._m_per_deg_lon = self._m_per_deg_lat * math.cos(self._latitude * math.pi / 180)
-        sigma_m = 3.0 
-        self._sigma_lat_deg = sigma_m / self._m_per_deg_lat
-        self._sigma_lon_deg = sigma_m / self._m_per_deg_lon
-        self.kalman.R = np.diag([self._sigma_lon_deg**2, self._sigma_lat_deg**2])
+        # Initial covariance
+        self.__kf.P           = np.eye(6) * 10.0
 
-    def update(self, update_data):
+    def __predict(self, dt):
+        
+        dt2                 = dt*dt
+        dt3                 = dt2*dt
+        dt4                 = dt2*dt2
+        dt5                 = dt3*dt2
 
-        dt = update_data.timestamp - self._timestamp # ms
-        self._timestamp = update_data.timestamp
-        self._speed = 0.0
+        # State transition matrix
+        self.__kf.F         = np.array([
+            [1, dt, dt2/2, 0,  0,     0],
+            [0,  1, dt,    0,  0,     0],
+            [0,  0, 1,     0,  0,     0],
+            [0,  0, 0,     1, dt, dt2/2],
+            [0,  0, 0,     0,  1, dt],
+            [0,  0, 0,     0,  0, 1]
+        ])
 
-        # Zustandsübergang
-        self.kalman.F = np.array([
-            [1, 0, dt, 0 ],
-            [0, 1, 0,  dt],
-            [0, 0, 1,  0 ],
-            [0, 0, 0,  1 ]
-        ], dtype=float)
+        # Process noise
+        self.__kf.Q         = self.__q * np.array([
+            [dt5/20, dt4/8, dt3/6, 0,       0,       0],
+            [dt4/8,  dt3/3, dt2/2, 0,       0,       0],
+            [dt3/6,  dt2/2, dt,    0,       0,       0],
+            [0,      0,      0,    dt5/20, dt4/8, dt3/6],
+            [0,      0,      0,    dt4/8,  dt3/3, dt2/2],
+            [0,      0,      0,    dt3/6,  dt2/2, dt]
+        ])
 
-        # prozessrauschen
-        Q = np.zeros((4, 4), dtype=float)
-        sx2 = self._sigma_lat_deg**2
-        sy2 = self._sigma_lon_deg**2
+        self.__kf.predict()
 
-        # x, vx
-        Q[0, 0] = 0.25 * dt**4 * sx2
-        Q[0, 2] = 0.5  * dt**3 * sx2
-        Q[2, 0] = Q[0, 2]
-        Q[2, 2] =        dt**2 * sx2
+    def __update(self, coord):
 
-        # y, vy
-        Q[1, 1] = 0.25 * dt**4 * sy2
-        Q[1, 3] = 0.5  * dt**3 * sy2
-        Q[3, 1] = Q[1, 3]
-        Q[3, 3] =        dt**2 * sy2
+        def gps_to_xy(coord, coord0) -> tuple[float, float]:
+            # Meter pro Grad
+            m_per_deg_lat = 111320
+            m_per_deg_lng = 111320 * math.cos(math.radians(coord0.latitude))
 
-        self.kalman.Q = Q
+            x = (coord.longitude - coord0.longitude) * m_per_deg_lng
+            y = (coord.latitude - coord0.latitude) * m_per_deg_lat
 
-        self.kalman.predict()
-        self.kalman.update(np.array([update_data.coords.latitude, update_data.coords.longitude]))
+            return (x, y)
 
-        # filtered state
-        self._latitude = self.kalman.x[0]
-        self._longitude = self.kalman.x[1]
-        self._speed = math.sqrt((self.kalman.x[2]*self._m_per_deg_lat)**2 + (self.kalman.x[3]*self._m_per_deg_lon)**2) / 1000.0 
-
+        pos = gps_to_xy(coord, self.__origin)
+        self.__kf.update(np.array([pos[0], pos[1]]))
+    
+    def __call__(self, update_data = None):
+        self.__dt = update_data.timestamp / 1000.0 - self.__t
+        self.__t = update_data.timestamp / 1000.0
+        self.__predict(dt = self.__dt) 
+        self.__update(update_data.coords)
+    
     @property
     def client_id(self):
-        return self._client_id
+        return self.__client_id
 
     @property
-    def latitude(self):
-        return self._latitude
+    def state(self):
+        return [float(f) for f in self.__kf.x]
 
     @property
-    def longitude(self):
-        return self._longitude
-
-    @property
-    def timestamp(self):
-        return self._timestamp
+    def time(self):
+        return self.__t
 
     @property
     def speed(self):
-        return self._speed
+        return self.__speed
+
+
+
+
 
